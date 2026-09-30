@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis-cont
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  app:
+    build:
+      context: ./app
+    container_name: app-cont
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    ports:
+      - "8000:3000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - APP_PORT=3000
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+
+networks:
+  app-network:
